@@ -112,18 +112,22 @@ function BingoCaller() {
   const playerTotals = useMemo(
     () =>
       players.map((p) => {
-        const total = WIN_CATEGORIES.reduce(
+        const winnings = WIN_CATEGORIES.reduce(
           (sum, c) => sum + (p.wins[c.key] ? prizes[c.key] : 0),
           0,
         );
-        return { ...p, total };
+        const net = winnings - p.buyIn;
+        return { ...p, winnings, net };
       }),
     [players, prizes],
   );
 
-  const grandTotal = useMemo(
-    () => playerTotals.reduce((s, p) => s + p.total, 0),
-    [playerTotals],
+  const totals = useMemo(
+    () => ({
+      pot: players.reduce((s, p) => s + p.buyIn, 0),
+      paidOut: playerTotals.reduce((s, p) => s + p.winnings, 0),
+    }),
+    [players, playerTotals],
   );
 
   const isCurrent = (n: number) => n === current;
