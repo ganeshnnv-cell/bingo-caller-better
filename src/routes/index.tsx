@@ -274,6 +274,37 @@ function BingoCaller() {
         </section>
       </div>
 
+      {/* Prizes per category */}
+      <section className="mt-10 rounded-3xl border border-border bg-card/60 p-6 backdrop-blur-sm">
+        <div className="mb-4">
+          <h2 className="font-display text-2xl tracking-wider">Prizes</h2>
+          <p className="text-xs text-muted-foreground">
+            Set a prize amount for each winning category.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          {WIN_CATEGORIES.map((c) => (
+            <label key={c.key} className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </span>
+              <div className="flex items-center rounded-lg border border-border bg-background/40 px-3">
+                <span className="text-sm text-muted-foreground">$</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={prizes[c.key] || ""}
+                  onChange={(e) => setPrize(c.key, parseFloat(e.target.value))}
+                  placeholder="0"
+                  className="w-full bg-transparent px-2 py-2 text-sm outline-none"
+                />
+              </div>
+            </label>
+          ))}
+        </div>
+      </section>
+
       {/* Players & winners */}
       <section className="mt-10 rounded-3xl border border-border bg-card/60 p-6 backdrop-blur-sm">
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
