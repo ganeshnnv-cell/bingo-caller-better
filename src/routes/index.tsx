@@ -38,6 +38,14 @@ function BingoCaller() {
   const [drawKey, setDrawKey] = useState(0);
   const [players, setPlayers] = useState<Player[]>([]);
   const [newName, setNewName] = useState("");
+  const [prizes, setPrizes] = useState<Record<WinKey, number>>({
+    first5: 0,
+    row1: 0,
+    row2: 0,
+    row3: 0,
+    fullHouse: 0,
+  });
+  const [gameEnded, setGameEnded] = useState(false);
 
   const addPlayer = useCallback(() => {
     const name = newName.trim();
