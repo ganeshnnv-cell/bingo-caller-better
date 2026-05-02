@@ -79,6 +79,8 @@ function BingoCaller() {
       ),
     );
   }, []);
+
+  const remaining = useMemo(
     () => ALL_NUMBERS.filter((n) => !called.includes(n)),
     [called],
   );
