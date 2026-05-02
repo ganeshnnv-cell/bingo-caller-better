@@ -393,6 +393,89 @@ function BingoCaller() {
           </div>
         )}
       </section>
+
+      {/* End-of-game payout summary */}
+      {gameEnded && (
+        <section
+          className="mt-10 rounded-3xl border-2 border-primary/60 p-6 backdrop-blur-sm"
+          style={{ background: "var(--gradient-stage)" }}
+        >
+          <div className="mb-6 flex flex-col gap-1 text-center">
+            <span className="text-xs uppercase tracking-[0.4em] text-primary">
+              Game Over
+            </span>
+            <h2 className="font-display text-4xl tracking-wider">
+              Final Payouts
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Total pot:{" "}
+              <span className="font-semibold text-foreground">
+                ${grandTotal.toFixed(2)}
+              </span>
+            </p>
+          </div>
+
+          {playerTotals.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground">
+              No players were added.
+            </p>
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-2">
+              {playerTotals
+                .slice()
+                .sort((a, b) => b.total - a.total)
+                .map((p) => {
+                  const wonCats = WIN_CATEGORIES.filter((c) => p.wins[c.key]);
+                  return (
+                    <li
+                      key={p.id}
+                      className={[
+                        "rounded-2xl border p-4",
+                        p.total > 0
+                          ? "border-primary/60 bg-primary/10"
+                          : "border-border bg-secondary/30",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="font-display text-2xl tracking-wide">
+                          {p.name}
+                        </span>
+                        <span className="font-display text-2xl text-primary">
+                          ${p.total.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {wonCats.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">
+                            No wins
+                          </span>
+                        ) : (
+                          wonCats.map((c) => (
+                            <span
+                              key={c.key}
+                              className="rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary"
+                            >
+                              {c.label} · ${prizes[c.key].toFixed(2)}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
+
+          <div className="mt-6 flex justify-center gap-3">
+            <button
+              onClick={reset}
+              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Start new game
+            </button>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
