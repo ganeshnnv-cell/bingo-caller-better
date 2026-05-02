@@ -70,7 +70,15 @@ function BingoCaller() {
     );
   }, []);
 
-  const remaining = useMemo(
+  const setBuyIn = useCallback((id: string, value: number) => {
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, buyIn: Number.isFinite(value) && value >= 0 ? value : 0 }
+          : p,
+      ),
+    );
+  }, []);
     () => ALL_NUMBERS.filter((n) => !called.includes(n)),
     [called],
   );
