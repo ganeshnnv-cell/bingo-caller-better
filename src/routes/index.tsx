@@ -21,6 +21,7 @@ type WinKey = (typeof WIN_CATEGORIES)[number]["key"];
 type Player = {
   id: string;
   name: string;
+  buyIn: number;
   wins: Record<WinKey, boolean>;
 };
 
