@@ -423,9 +423,13 @@ function BingoCaller() {
               Final Payouts
             </h2>
             <p className="text-sm text-muted-foreground">
-              Total pot:{" "}
+              Pot collected:{" "}
               <span className="font-semibold text-foreground">
-                ${grandTotal.toFixed(2)}
+                ${totals.pot.toFixed(2)}
+              </span>{" "}
+              · Paid out:{" "}
+              <span className="font-semibold text-foreground">
+                ${totals.paidOut.toFixed(2)}
               </span>
             </p>
           </div>
@@ -438,26 +442,58 @@ function BingoCaller() {
             <ul className="grid gap-3 md:grid-cols-2">
               {playerTotals
                 .slice()
-                .sort((a, b) => b.total - a.total)
+                .sort((a, b) => b.net - a.net)
                 .map((p) => {
                   const wonCats = WIN_CATEGORIES.filter((c) => p.wins[c.key]);
+                  const owes = p.net < 0;
                   return (
                     <li
                       key={p.id}
                       className={[
                         "rounded-2xl border p-4",
-                        p.total > 0
+                        p.net > 0
                           ? "border-primary/60 bg-primary/10"
-                          : "border-border bg-secondary/30",
+                          : owes
+                            ? "border-destructive/40 bg-destructive/10"
+                            : "border-border bg-secondary/30",
                       ].join(" ")}
                     >
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="font-display text-2xl tracking-wide">
                           {p.name}
                         </span>
-                        <span className="font-display text-2xl text-primary">
-                          ${p.total.toFixed(2)}
+                        <span
+                          className={[
+                            "font-display text-2xl",
+                            p.net > 0
+                              ? "text-primary"
+                              : owes
+                                ? "text-destructive"
+                                : "text-foreground",
+                          ].join(" ")}
+                        >
+                          {p.net >= 0 ? "+" : "−"}$
+                          {Math.abs(p.net).toFixed(2)}
                         </span>
+                      </div>
+                      <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                        <span>Buy-in: ${p.buyIn.toFixed(2)}</span>
+                        <span>Won: ${p.winnings.toFixed(2)}</span>
+                      </div>
+                      <div className="mt-1 text-xs">
+                        {owes ? (
+                          <span className="text-destructive">
+                            Owes ${Math.abs(p.net).toFixed(2)}
+                          </span>
+                        ) : p.net > 0 ? (
+                          <span className="text-primary">
+                            Receives ${p.net.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Breaks even
+                          </span>
+                        )}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {wonCats.length === 0 ? (
