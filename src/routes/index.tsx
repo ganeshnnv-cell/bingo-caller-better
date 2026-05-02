@@ -53,7 +53,7 @@ function BingoCaller() {
     if (!name) return;
     setPlayers((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), name, wins: emptyWins() },
+      { id: crypto.randomUUID(), name, buyIn: 0, wins: emptyWins() },
     ]);
     setNewName("");
   }, [newName]);
