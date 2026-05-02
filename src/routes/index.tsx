@@ -36,6 +36,30 @@ function BingoCaller() {
   const [called, setCalled] = useState<number[]>([]);
   const [current, setCurrent] = useState<number | null>(null);
   const [drawKey, setDrawKey] = useState(0);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [newName, setNewName] = useState("");
+
+  const addPlayer = useCallback(() => {
+    const name = newName.trim();
+    if (!name) return;
+    setPlayers((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name, wins: emptyWins() },
+    ]);
+    setNewName("");
+  }, [newName]);
+
+  const removePlayer = useCallback((id: string) => {
+    setPlayers((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const toggleWin = useCallback((id: string, key: WinKey) => {
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, wins: { ...p.wins, [key]: !p.wins[key] } } : p,
+      ),
+    );
+  }, []);
 
   const remaining = useMemo(
     () => ALL_NUMBERS.filter((n) => !called.includes(n)),
