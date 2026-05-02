@@ -357,10 +357,11 @@ function BingoCaller() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-separate border-spacing-y-2">
+            <table className="w-full min-w-[760px] border-separate border-spacing-y-2">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="px-3 py-2">Player</th>
+                  <th className="px-2 py-2">Buy-in</th>
                   {WIN_CATEGORIES.map((c) => (
                     <th key={c.key} className="px-2 py-2 text-center">
                       {c.label}
@@ -374,6 +375,22 @@ function BingoCaller() {
                   <tr key={p.id} className="bg-secondary/40">
                     <td className="rounded-l-lg px-3 py-2 font-display text-lg tracking-wide">
                       {p.name}
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center rounded-md border border-border bg-background/40 px-2">
+                        <span className="text-xs text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={p.buyIn || ""}
+                          onChange={(e) =>
+                            setBuyIn(p.id, parseFloat(e.target.value))
+                          }
+                          placeholder="0"
+                          className="w-20 bg-transparent px-1 py-1.5 text-sm outline-none"
+                        />
+                      </div>
                     </td>
                     {WIN_CATEGORIES.map((c) => {
                       const won = p.wins[c.key];
