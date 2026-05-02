@@ -38,6 +38,14 @@ function BingoCaller() {
   const [drawKey, setDrawKey] = useState(0);
   const [players, setPlayers] = useState<Player[]>([]);
   const [newName, setNewName] = useState("");
+  const [prizes, setPrizes] = useState<Record<WinKey, number>>({
+    first5: 0,
+    row1: 0,
+    row2: 0,
+    row3: 0,
+    fullHouse: 0,
+  });
+  const [gameEnded, setGameEnded] = useState(false);
 
   const addPlayer = useCallback(() => {
     const name = newName.trim();
@@ -78,7 +86,34 @@ function BingoCaller() {
     setCalled([]);
     setCurrent(null);
     setDrawKey(0);
+    setGameEnded(false);
+    setPlayers((prev) => prev.map((p) => ({ ...p, wins: emptyWins() })));
   }, []);
+
+  const endGame = useCallback(() => {
+    setGameEnded(true);
+  }, []);
+
+  const setPrize = useCallback((key: WinKey, value: number) => {
+    setPrizes((prev) => ({ ...prev, [key]: Number.isFinite(value) ? value : 0 }));
+  }, []);
+
+  const playerTotals = useMemo(
+    () =>
+      players.map((p) => {
+        const total = WIN_CATEGORIES.reduce(
+          (sum, c) => sum + (p.wins[c.key] ? prizes[c.key] : 0),
+          0,
+        );
+        return { ...p, total };
+      }),
+    [players, prizes],
+  );
+
+  const grandTotal = useMemo(
+    () => playerTotals.reduce((s, p) => s + p.total, 0),
+    [playerTotals],
+  );
 
   const isCurrent = (n: number) => n === current;
   const isCalled = (n: number) => called.includes(n) && n !== current;
@@ -144,12 +179,21 @@ function BingoCaller() {
                 </span>
                 /{TOTAL}
               </span>
-              <button
-                onClick={reset}
-                className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wider transition-colors hover:bg-secondary"
-              >
-                Reset
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={endGame}
+                  disabled={gameEnded || called.length === 0}
+                  className="rounded-full border border-primary/60 px-3 py-1 text-xs uppercase tracking-wider text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  End game
+                </button>
+                <button
+                  onClick={reset}
+                  className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wider transition-colors hover:bg-secondary"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -229,6 +273,37 @@ function BingoCaller() {
           )}
         </section>
       </div>
+
+      {/* Prizes per category */}
+      <section className="mt-10 rounded-3xl border border-border bg-card/60 p-6 backdrop-blur-sm">
+        <div className="mb-4">
+          <h2 className="font-display text-2xl tracking-wider">Prizes</h2>
+          <p className="text-xs text-muted-foreground">
+            Set a prize amount for each winning category.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          {WIN_CATEGORIES.map((c) => (
+            <label key={c.key} className="flex flex-col gap-1">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                {c.label}
+              </span>
+              <div className="flex items-center rounded-lg border border-border bg-background/40 px-3">
+                <span className="text-sm text-muted-foreground">$</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={prizes[c.key] || ""}
+                  onChange={(e) => setPrize(c.key, parseFloat(e.target.value))}
+                  placeholder="0"
+                  className="w-full bg-transparent px-2 py-2 text-sm outline-none"
+                />
+              </div>
+            </label>
+          ))}
+        </div>
+      </section>
 
       {/* Players & winners */}
       <section className="mt-10 rounded-3xl border border-border bg-card/60 p-6 backdrop-blur-sm">
@@ -318,6 +393,89 @@ function BingoCaller() {
           </div>
         )}
       </section>
+
+      {/* End-of-game payout summary */}
+      {gameEnded && (
+        <section
+          className="mt-10 rounded-3xl border-2 border-primary/60 p-6 backdrop-blur-sm"
+          style={{ background: "var(--gradient-stage)" }}
+        >
+          <div className="mb-6 flex flex-col gap-1 text-center">
+            <span className="text-xs uppercase tracking-[0.4em] text-primary">
+              Game Over
+            </span>
+            <h2 className="font-display text-4xl tracking-wider">
+              Final Payouts
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Total pot:{" "}
+              <span className="font-semibold text-foreground">
+                ${grandTotal.toFixed(2)}
+              </span>
+            </p>
+          </div>
+
+          {playerTotals.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground">
+              No players were added.
+            </p>
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-2">
+              {playerTotals
+                .slice()
+                .sort((a, b) => b.total - a.total)
+                .map((p) => {
+                  const wonCats = WIN_CATEGORIES.filter((c) => p.wins[c.key]);
+                  return (
+                    <li
+                      key={p.id}
+                      className={[
+                        "rounded-2xl border p-4",
+                        p.total > 0
+                          ? "border-primary/60 bg-primary/10"
+                          : "border-border bg-secondary/30",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="font-display text-2xl tracking-wide">
+                          {p.name}
+                        </span>
+                        <span className="font-display text-2xl text-primary">
+                          ${p.total.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {wonCats.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">
+                            No wins
+                          </span>
+                        ) : (
+                          wonCats.map((c) => (
+                            <span
+                              key={c.key}
+                              className="rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary"
+                            >
+                              {c.label} · ${prizes[c.key].toFixed(2)}
+                            </span>
+                          ))
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
+
+          <div className="mt-6 flex justify-center gap-3">
+            <button
+              onClick={reset}
+              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold uppercase tracking-wider text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Start new game
+            </button>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
