@@ -86,7 +86,34 @@ function BingoCaller() {
     setCalled([]);
     setCurrent(null);
     setDrawKey(0);
+    setGameEnded(false);
+    setPlayers((prev) => prev.map((p) => ({ ...p, wins: emptyWins() })));
   }, []);
+
+  const endGame = useCallback(() => {
+    setGameEnded(true);
+  }, []);
+
+  const setPrize = useCallback((key: WinKey, value: number) => {
+    setPrizes((prev) => ({ ...prev, [key]: Number.isFinite(value) ? value : 0 }));
+  }, []);
+
+  const playerTotals = useMemo(
+    () =>
+      players.map((p) => {
+        const total = WIN_CATEGORIES.reduce(
+          (sum, c) => sum + (p.wins[c.key] ? prizes[c.key] : 0),
+          0,
+        );
+        return { ...p, total };
+      }),
+    [players, prizes],
+  );
+
+  const grandTotal = useMemo(
+    () => playerTotals.reduce((s, p) => s + p.total, 0),
+    [playerTotals],
+  );
 
   const isCurrent = (n: number) => n === current;
   const isCalled = (n: number) => called.includes(n) && n !== current;
