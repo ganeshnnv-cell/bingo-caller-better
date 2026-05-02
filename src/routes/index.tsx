@@ -8,6 +8,30 @@ export const Route = createFileRoute("/")({
 const TOTAL = 90;
 const ALL_NUMBERS = Array.from({ length: TOTAL }, (_, i) => i + 1);
 
+const WIN_CATEGORIES = [
+  { key: "first5", label: "First 5" },
+  { key: "row1", label: "Row 1" },
+  { key: "row2", label: "Row 2" },
+  { key: "row3", label: "Row 3" },
+  { key: "fullHouse", label: "Full House" },
+] as const;
+
+type WinKey = (typeof WIN_CATEGORIES)[number]["key"];
+
+type Player = {
+  id: string;
+  name: string;
+  wins: Record<WinKey, boolean>;
+};
+
+const emptyWins = (): Record<WinKey, boolean> => ({
+  first5: false,
+  row1: false,
+  row2: false,
+  row3: false,
+  fullHouse: false,
+});
+
 function BingoCaller() {
   const [called, setCalled] = useState<number[]>([]);
   const [current, setCurrent] = useState<number | null>(null);
