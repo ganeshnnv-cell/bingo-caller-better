@@ -21,6 +21,7 @@ type WinKey = (typeof WIN_CATEGORIES)[number]["key"];
 type Player = {
   id: string;
   name: string;
+  buyIn: number;
   wins: Record<WinKey, boolean>;
 };
 
@@ -52,7 +53,7 @@ function BingoCaller() {
     if (!name) return;
     setPlayers((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), name, wins: emptyWins() },
+      { id: crypto.randomUUID(), name, buyIn: 0, wins: emptyWins() },
     ]);
     setNewName("");
   }, [newName]);
@@ -65,6 +66,16 @@ function BingoCaller() {
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === id ? { ...p, wins: { ...p.wins, [key]: !p.wins[key] } } : p,
+      ),
+    );
+  }, []);
+
+  const setBuyIn = useCallback((id: string, value: number) => {
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, buyIn: Number.isFinite(value) && value >= 0 ? value : 0 }
+          : p,
       ),
     );
   }, []);
@@ -101,18 +112,22 @@ function BingoCaller() {
   const playerTotals = useMemo(
     () =>
       players.map((p) => {
-        const total = WIN_CATEGORIES.reduce(
+        const winnings = WIN_CATEGORIES.reduce(
           (sum, c) => sum + (p.wins[c.key] ? prizes[c.key] : 0),
           0,
         );
-        return { ...p, total };
+        const net = winnings - p.buyIn;
+        return { ...p, winnings, net };
       }),
     [players, prizes],
   );
 
-  const grandTotal = useMemo(
-    () => playerTotals.reduce((s, p) => s + p.total, 0),
-    [playerTotals],
+  const totals = useMemo(
+    () => ({
+      pot: players.reduce((s, p) => s + p.buyIn, 0),
+      paidOut: playerTotals.reduce((s, p) => s + p.winnings, 0),
+    }),
+    [players, playerTotals],
   );
 
   const isCurrent = (n: number) => n === current;
@@ -342,10 +357,11 @@ function BingoCaller() {
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-separate border-spacing-y-2">
+            <table className="w-full min-w-[760px] border-separate border-spacing-y-2">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="px-3 py-2">Player</th>
+                  <th className="px-2 py-2">Buy-in</th>
                   {WIN_CATEGORIES.map((c) => (
                     <th key={c.key} className="px-2 py-2 text-center">
                       {c.label}
@@ -359,6 +375,22 @@ function BingoCaller() {
                   <tr key={p.id} className="bg-secondary/40">
                     <td className="rounded-l-lg px-3 py-2 font-display text-lg tracking-wide">
                       {p.name}
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center rounded-md border border-border bg-background/40 px-2">
+                        <span className="text-xs text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={p.buyIn || ""}
+                          onChange={(e) =>
+                            setBuyIn(p.id, parseFloat(e.target.value))
+                          }
+                          placeholder="0"
+                          className="w-20 bg-transparent px-1 py-1.5 text-sm outline-none"
+                        />
+                      </div>
                     </td>
                     {WIN_CATEGORIES.map((c) => {
                       const won = p.wins[c.key];
@@ -408,9 +440,13 @@ function BingoCaller() {
               Final Payouts
             </h2>
             <p className="text-sm text-muted-foreground">
-              Total pot:{" "}
+              Pot collected:{" "}
               <span className="font-semibold text-foreground">
-                ${grandTotal.toFixed(2)}
+                ${totals.pot.toFixed(2)}
+              </span>{" "}
+              · Paid out:{" "}
+              <span className="font-semibold text-foreground">
+                ${totals.paidOut.toFixed(2)}
               </span>
             </p>
           </div>
@@ -423,26 +459,58 @@ function BingoCaller() {
             <ul className="grid gap-3 md:grid-cols-2">
               {playerTotals
                 .slice()
-                .sort((a, b) => b.total - a.total)
+                .sort((a, b) => b.net - a.net)
                 .map((p) => {
                   const wonCats = WIN_CATEGORIES.filter((c) => p.wins[c.key]);
+                  const owes = p.net < 0;
                   return (
                     <li
                       key={p.id}
                       className={[
                         "rounded-2xl border p-4",
-                        p.total > 0
+                        p.net > 0
                           ? "border-primary/60 bg-primary/10"
-                          : "border-border bg-secondary/30",
+                          : owes
+                            ? "border-destructive/40 bg-destructive/10"
+                            : "border-border bg-secondary/30",
                       ].join(" ")}
                     >
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="font-display text-2xl tracking-wide">
                           {p.name}
                         </span>
-                        <span className="font-display text-2xl text-primary">
-                          ${p.total.toFixed(2)}
+                        <span
+                          className={[
+                            "font-display text-2xl",
+                            p.net > 0
+                              ? "text-primary"
+                              : owes
+                                ? "text-destructive"
+                                : "text-foreground",
+                          ].join(" ")}
+                        >
+                          {p.net >= 0 ? "+" : "−"}$
+                          {Math.abs(p.net).toFixed(2)}
                         </span>
+                      </div>
+                      <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                        <span>Buy-in: ${p.buyIn.toFixed(2)}</span>
+                        <span>Won: ${p.winnings.toFixed(2)}</span>
+                      </div>
+                      <div className="mt-1 text-xs">
+                        {owes ? (
+                          <span className="text-destructive">
+                            Owes ${Math.abs(p.net).toFixed(2)}
+                          </span>
+                        ) : p.net > 0 ? (
+                          <span className="text-primary">
+                            Receives ${p.net.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Breaks even
+                          </span>
+                        )}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {wonCats.length === 0 ? (
