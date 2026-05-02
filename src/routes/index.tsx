@@ -8,10 +8,58 @@ export const Route = createFileRoute("/")({
 const TOTAL = 90;
 const ALL_NUMBERS = Array.from({ length: TOTAL }, (_, i) => i + 1);
 
+const WIN_CATEGORIES = [
+  { key: "first5", label: "First 5" },
+  { key: "row1", label: "Row 1" },
+  { key: "row2", label: "Row 2" },
+  { key: "row3", label: "Row 3" },
+  { key: "fullHouse", label: "Full House" },
+] as const;
+
+type WinKey = (typeof WIN_CATEGORIES)[number]["key"];
+
+type Player = {
+  id: string;
+  name: string;
+  wins: Record<WinKey, boolean>;
+};
+
+const emptyWins = (): Record<WinKey, boolean> => ({
+  first5: false,
+  row1: false,
+  row2: false,
+  row3: false,
+  fullHouse: false,
+});
+
 function BingoCaller() {
   const [called, setCalled] = useState<number[]>([]);
   const [current, setCurrent] = useState<number | null>(null);
   const [drawKey, setDrawKey] = useState(0);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [newName, setNewName] = useState("");
+
+  const addPlayer = useCallback(() => {
+    const name = newName.trim();
+    if (!name) return;
+    setPlayers((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name, wins: emptyWins() },
+    ]);
+    setNewName("");
+  }, [newName]);
+
+  const removePlayer = useCallback((id: string) => {
+    setPlayers((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const toggleWin = useCallback((id: string, key: WinKey) => {
+    setPlayers((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, wins: { ...p.wins, [key]: !p.wins[key] } } : p,
+      ),
+    );
+  }, []);
 
   const remaining = useMemo(
     () => ALL_NUMBERS.filter((n) => !called.includes(n)),
@@ -181,6 +229,95 @@ function BingoCaller() {
           )}
         </section>
       </div>
+
+      {/* Players & winners */}
+      <section className="mt-10 rounded-3xl border border-border bg-card/60 p-6 backdrop-blur-sm">
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-display text-2xl tracking-wider">Players</h2>
+            <p className="text-xs text-muted-foreground">
+              Tick a category when a player calls a win.
+            </p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              addPlayer();
+            }}
+            className="flex w-full gap-2 md:w-auto"
+          >
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Add player name"
+              className="flex-1 rounded-lg border border-border bg-background/40 px-3 py-2 text-sm outline-none focus:border-primary md:w-64"
+            />
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Add
+            </button>
+          </form>
+        </div>
+
+        {players.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No players yet. Add one above to start tracking winners.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] border-separate border-spacing-y-2">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="px-3 py-2">Player</th>
+                  {WIN_CATEGORIES.map((c) => (
+                    <th key={c.key} className="px-2 py-2 text-center">
+                      {c.label}
+                    </th>
+                  ))}
+                  <th className="px-2 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {players.map((p) => (
+                  <tr key={p.id} className="bg-secondary/40">
+                    <td className="rounded-l-lg px-3 py-2 font-display text-lg tracking-wide">
+                      {p.name}
+                    </td>
+                    {WIN_CATEGORIES.map((c) => {
+                      const won = p.wins[c.key];
+                      return (
+                        <td key={c.key} className="px-2 py-2 text-center">
+                          <button
+                            onClick={() => toggleWin(p.id, c.key)}
+                            className={[
+                              "h-9 w-full max-w-[110px] rounded-md border text-xs font-semibold uppercase tracking-wider transition-all",
+                              won
+                                ? "border-primary bg-primary text-primary-foreground shadow-[var(--shadow-glow)]"
+                                : "border-border bg-background/30 text-muted-foreground hover:border-primary/60 hover:text-foreground",
+                            ].join(" ")}
+                          >
+                            {won ? "✓ Won" : "Mark"}
+                          </button>
+                        </td>
+                      );
+                    })}
+                    <td className="rounded-r-lg px-2 py-2 text-right">
+                      <button
+                        onClick={() => removePlayer(p.id)}
+                        className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </main>
   );
 }
