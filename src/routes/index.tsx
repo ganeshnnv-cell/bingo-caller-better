@@ -126,12 +126,26 @@ function BingoCaller() {
     setCurrent(null);
     setDrawKey(0);
     setGameEnded(false);
+    setAutoPlaying(false);
     setPlayers((prev) => prev.map((p) => ({ ...p, wins: emptyWins() })));
   }, []);
 
   const endGame = useCallback(() => {
     setGameEnded(true);
+    setAutoPlaying(false);
   }, []);
+
+  useEffect(() => {
+    if (!autoPlaying) return;
+    if (remaining.length === 0 || gameEnded) {
+      setAutoPlaying(false);
+      return;
+    }
+    const id = window.setInterval(() => {
+      drawNext();
+    }, autoInterval * 1000);
+    return () => window.clearInterval(id);
+  }, [autoPlaying, autoInterval, drawNext, remaining.length, gameEnded]);
 
   const setPrize = useCallback((key: WinKey, value: number) => {
     setPrizes((prev) => ({ ...prev, [key]: Number.isFinite(value) ? value : 0 }));
