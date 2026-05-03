@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/")({
   component: BingoCaller,
