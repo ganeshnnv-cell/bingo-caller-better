@@ -116,7 +116,8 @@ function BingoCaller() {
     setCurrent(next);
     setCalled((prev) => [next, ...prev]);
     setDrawKey((k) => k + 1);
-  }, [remaining]);
+    speakNumber(next);
+  }, [remaining, speakNumber]);
 
   const reset = useCallback(() => {
     setCalled([]);
