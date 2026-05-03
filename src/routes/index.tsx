@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/")({
   component: BingoCaller,
@@ -47,6 +57,21 @@ function BingoCaller() {
     fullHouse: 0,
   });
   const [gameEnded, setGameEnded] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"reset" | "end" | null>(null);
+
+  const speakNumber = useCallback((n: number) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(`Number ${n}`);
+      u.rate = 0.9;
+      u.pitch = 1;
+      u.volume = 1;
+      window.speechSynthesis.speak(u);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const addPlayer = useCallback(() => {
     const name = newName.trim();
@@ -91,7 +116,8 @@ function BingoCaller() {
     setCurrent(next);
     setCalled((prev) => [next, ...prev]);
     setDrawKey((k) => k + 1);
-  }, [remaining]);
+    speakNumber(next);
+  }, [remaining, speakNumber]);
 
   const reset = useCallback(() => {
     setCalled([]);
@@ -196,14 +222,14 @@ function BingoCaller() {
               </span>
               <div className="flex gap-2">
                 <button
-                  onClick={endGame}
+                  onClick={() => setConfirmAction("end")}
                   disabled={gameEnded || called.length === 0}
                   className="rounded-full border border-primary/60 px-3 py-1 text-xs uppercase tracking-wider text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   End game
                 </button>
                 <button
-                  onClick={reset}
+                  onClick={() => setConfirmAction("reset")}
                   className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wider transition-colors hover:bg-secondary"
                 >
                   Reset
@@ -544,6 +570,35 @@ function BingoCaller() {
           </div>
         </section>
       )}
+      <AlertDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === "end" ? "End the game?" : "Reset the game?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction === "end"
+                ? "This will lock in the current wins and show the final payouts."
+                : "This will clear all called numbers and player wins. Player names and buy-ins will be kept."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmAction === "end") endGame();
+                else if (confirmAction === "reset") reset();
+                setConfirmAction(null);
+              }}
+            >
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
