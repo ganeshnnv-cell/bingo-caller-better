@@ -58,6 +58,8 @@ function BingoCaller() {
   });
   const [gameEnded, setGameEnded] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"reset" | "end" | null>(null);
+  const [autoInterval, setAutoInterval] = useState<5 | 10>(5);
+  const [autoPlaying, setAutoPlaying] = useState(false);
 
   const speakNumber = useCallback((n: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
