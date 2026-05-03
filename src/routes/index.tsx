@@ -570,6 +570,35 @@ function BingoCaller() {
           </div>
         </section>
       )}
+      <AlertDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => !open && setConfirmAction(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === "end" ? "End the game?" : "Reset the game?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction === "end"
+                ? "This will lock in the current wins and show the final payouts."
+                : "This will clear all called numbers and player wins. Player names and buy-ins will be kept."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmAction === "end") endGame();
+                else if (confirmAction === "reset") reset();
+                setConfirmAction(null);
+              }}
+            >
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
