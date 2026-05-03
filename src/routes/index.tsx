@@ -57,6 +57,21 @@ function BingoCaller() {
     fullHouse: 0,
   });
   const [gameEnded, setGameEnded] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"reset" | "end" | null>(null);
+
+  const speakNumber = useCallback((n: number) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(`Number ${n}`);
+      u.rate = 0.9;
+      u.pitch = 1;
+      u.volume = 1;
+      window.speechSynthesis.speak(u);
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const addPlayer = useCallback(() => {
     const name = newName.trim();
