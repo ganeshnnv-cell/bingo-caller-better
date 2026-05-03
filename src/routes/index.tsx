@@ -222,14 +222,14 @@ function BingoCaller() {
               </span>
               <div className="flex gap-2">
                 <button
-                  onClick={endGame}
+                  onClick={() => setConfirmAction("end")}
                   disabled={gameEnded || called.length === 0}
                   className="rounded-full border border-primary/60 px-3 py-1 text-xs uppercase tracking-wider text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   End game
                 </button>
                 <button
-                  onClick={reset}
+                  onClick={() => setConfirmAction("reset")}
                   className="rounded-full border border-border px-3 py-1 text-xs uppercase tracking-wider transition-colors hover:bg-secondary"
                 >
                   Reset
