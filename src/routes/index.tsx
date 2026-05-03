@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +58,8 @@ function BingoCaller() {
   });
   const [gameEnded, setGameEnded] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"reset" | "end" | null>(null);
+  const [autoInterval, setAutoInterval] = useState<5 | 10>(5);
+  const [autoPlaying, setAutoPlaying] = useState(false);
 
   const speakNumber = useCallback((n: number) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -124,12 +126,26 @@ function BingoCaller() {
     setCurrent(null);
     setDrawKey(0);
     setGameEnded(false);
+    setAutoPlaying(false);
     setPlayers((prev) => prev.map((p) => ({ ...p, wins: emptyWins() })));
   }, []);
 
   const endGame = useCallback(() => {
     setGameEnded(true);
+    setAutoPlaying(false);
   }, []);
+
+  useEffect(() => {
+    if (!autoPlaying) return;
+    if (remaining.length === 0 || gameEnded) {
+      setAutoPlaying(false);
+      return;
+    }
+    const id = window.setInterval(() => {
+      drawNext();
+    }, autoInterval * 1000);
+    return () => window.clearInterval(id);
+  }, [autoPlaying, autoInterval, drawNext, remaining.length, gameEnded]);
 
   const setPrize = useCallback((key: WinKey, value: number) => {
     setPrizes((prev) => ({ ...prev, [key]: Number.isFinite(value) ? value : 0 }));
@@ -211,6 +227,42 @@ function BingoCaller() {
             >
               {remaining.length === 0 ? "All called" : "Draw Number"}
             </button>
+
+            <div className="mt-3 flex w-full flex-col gap-2 rounded-xl border border-border bg-background/30 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Auto draw
+                </span>
+                <div className="flex gap-1">
+                  {[5, 10].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setAutoInterval(s as 5 | 10)}
+                      className={[
+                        "rounded-md px-2 py-1 text-xs font-semibold transition-colors",
+                        autoInterval === s
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-secondary/70",
+                      ].join(" ")}
+                    >
+                      {s}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => setAutoPlaying((p) => !p)}
+                disabled={remaining.length === 0 || gameEnded}
+                className={[
+                  "w-full rounded-lg px-3 py-2 text-sm font-semibold uppercase tracking-wider transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40",
+                  autoPlaying
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-primary text-primary-foreground",
+                ].join(" ")}
+              >
+                {autoPlaying ? `Pause auto (${autoInterval}s)` : `Start auto (${autoInterval}s)`}
+              </button>
+            </div>
 
             <div className="mt-4 flex w-full items-center justify-between text-sm text-muted-foreground">
               <span>
